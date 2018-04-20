@@ -3,6 +3,8 @@
 #A.1 Create a list containing any 4 strings.
 list_a = [1, 2, 3, 4]
 
+# EH: these aren't strings - these are integers!
+
 #A.2 Print the 3rd item in the list.
 print(list_a[2])
 
@@ -49,12 +51,13 @@ print(case_insensitive)
 ##C. Random Function
 low = int(input("Lower-bound integer: "))
 high = int(input("Higher-bound integer: "))
-
+# I see what you’re doing, but this doesn’t just default to zero – it is always zero. You want to do this in your function defintition (i.e. def randomize(hi, lo = 0): ...
 def randomize(lo,hi):
     if lo < 0:
         lo = 0
     from random import randint
     random_num = randint(lo, hi)#inclusive of both numbers
+    # These don't test your function - they test the randint function. These should be outside the function definition.
     assert(0 <= random_num <= hi)
     assert(lo <= random_num <= hi)
 
@@ -71,12 +74,14 @@ def bestseller(n, book):
     book = book.title()
     message = "The number {} bestseller today is: {}".format(n, book)
     return message
-    
+
 print(bestseller(number, booktitle))
 
 #-------------------------------------------
 ##E. Password Validation Function
 password = str(input("Create new password: "))
+
+# This is not a function!
 
 import string
 digit_check = string.digits #0-9
@@ -85,7 +90,7 @@ digit = 0
 symbol = 0
 upper = 0
 password_check = 0
-    
+
 while password_check < 1:
     for i in range(len(password)):
         for j in range(len(digit_check)):
@@ -112,7 +117,7 @@ while password_check < 1:
     else:
         password_check += 1
         print("You have successfully created a password!")
- 
+
 #-------------------------------------------
 ##F. Exponentiation Function
 base = int(input("Base integer: "))
@@ -125,6 +130,8 @@ def exp (x, y):
         output = output*x
         y = y-1
     return output
+
+exp(5,0)
 
 print(exp(base,expo))
 
@@ -151,6 +158,4 @@ def minimum (b):
 
 print("The minimum number on the list is: " + maximum(num_list))
 print("The minimum number on the list is: " + minimum(num_list))
-
-
-
+#

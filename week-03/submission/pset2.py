@@ -4,6 +4,8 @@ import matplotlib.pylab as plt
 from itertools import cycle, islice
 %matplotlib inline
 
+df = pd.read_csv('/Users/ehuntley/Dropbox/teaching/big-data/data/skyhook_2017-07.csv', sep=',')
+
 
 import datetime as dt
 df = pd.read_csv('week-03/data/skyhook_2017-07.csv', sep=',')
@@ -77,7 +79,7 @@ df170706_17_freq.plot.scatter(x='lon', y='lat', s=(df170706_17_freq['count']/150
 #   A highlight is on the concentration of people using the I-93 only towards the southern part of Boston and not the north.
 df170706_19 = df.loc[df['timestamp'] == pd.Timestamp('2017-07-06 19:00:00')] #create a dataframe from the specific timeframe for scatter plot
 df170706_19_freq = df170706_19.groupby( ['lon','lat']  )['count'].sum().to_frame(name = 'count').reset_index() #create a new dataframe with count columns for
-df170706_19_freq.plot.scatter(x='lon', y='lat', s=(df170706_19_freq['count']/150), title ="Total pings by location at 7pm of July 6, 2017", figsize=(10, 10), color='#FFC39C', edgecolor='black')
+df170706_19_freq.plot.scatter(x='lon', y='lat', s=(df170706_19_freq['count']/1), title ="Total pings by location at 7pm of July 6, 2017", figsize=(10, 10), color='#FFC39C', edgecolor='black')
 #-----------------------------------------------------------
 ##Problem 6: Analyze Your (Very) Preliminary Findings
 #(1) A phenomenon that the data make visible (for example, how location services are utilized over the course of a day and why this might be).

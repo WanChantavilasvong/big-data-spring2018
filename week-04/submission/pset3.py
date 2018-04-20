@@ -185,12 +185,22 @@ plt.show()
 
 #-----------------------------------------------------------
 ##STEP 3: Scatter plot from lat lon
+'''grading note: bringing in csv to view scatterplot and look at cleaned data'''
+tweets = pd.read_csv('/Users/phoebe/Dropbox (MIT)/big-data/data/pset3_CSVs/Chantavilasvong, Wan/36741619-tweets_data.csv')
+tweets.head()
+np.shape(tweets)
+tweets['location'].unique()
+tweets['lon'].unique()
+tweets['lat'].unique()
+
+''' wan, it looks like your code below is not working because your dataset has some lat and lon values that are not actually lats or lons. in the lon data, you seem to have some dates and in the lat data, you seem to have some locations (e.g. Boston, MA). this may have happened during the parsing stage. your code looks correct below, but i have to deduct some points since i'm unable to run it with the data as is. - phoebe'''
+
 #Check number of rows with coordinates
 tweets_geo = tweets[tweets['lon'].notnull() & tweets['lat'].notnull()]
 len(tweets_geo)
-
 #Create a new dataframe with 3 columns: lon, lat, and count of the same coordinates
-tweets_geo = tweets_geo.groupby(['lon','lat'])['id'].count().to_frame(name = 'count').reset_index() #create a new dataframe with count columns for
+tweets_geo = tweets_geo.groupby(['lon','lat'])['id'].count().to_frame(name = 'count').reset_index()
+#create a new dataframe with count columns for
 #Scatter plot with dot size as the count variable
 tweets_geo.plot.scatter(x='lon', y='lat', s=(tweets_geo['count']*20), title ="Amount of tweets by geographic location", figsize=(10, 10), color='black', edgecolor='white').set(xlabel='Longitude', ylabel='Latitude')
 
@@ -274,6 +284,13 @@ plt.show()
 
 #-----------------------------------------------------------
 ##STEP 6: Scatter plot from available lat lon
+'''grading note: bringing in csv to view scatterplot and look at cleaned data'''
+flood = pd.read_csv('/Users/phoebe/Dropbox (MIT)/big-data/data/pset3_CSVs/Chantavilasvong, Wan/36741597-flood_data.csv')
+flood.head()
+np.shape(flood)
+flood['location'].unique()
+flood['lon'].unique()
+
 #Check number of rows with coordinates
 flood_geo = flood[flood['lon'].notnull() & flood['lat'].notnull()]
 len(flood_geo)
