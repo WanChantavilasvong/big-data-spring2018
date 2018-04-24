@@ -28,10 +28,10 @@
       .attr("width", width)
       .attr("height", height);
 
-    var blues = d3.schemeBlues[5];
+    var blues = d3.schemeBlues[6];
 
     var color = d3.scaleThreshold()
-      .domain([0.0, 0.1, 0.2, 0.3, 0.4])
+      .domain([0.0, 0.1, 0.2, 0.3, 0.4, 0.5])
       .range(blues);
 
     d3.queue()
