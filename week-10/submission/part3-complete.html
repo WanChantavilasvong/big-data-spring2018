@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+  <title>PSET7-part3</title>
+	<script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+	<script src="https://d3js.org/topojson.v1.min.js"></script>
+	<script src="https://d3js.org/d3-queue.v2.min.js"></script>
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+</head>
+<body>
+  <script>
+
+    //PART I: CHOROPLETH MAP
+    var width = 700;
+    var height = 520;
+
+    var projection = d3.geoAlbers()
+      .scale(180000)
+      .rotate([71.092, 0])
+      .center([0, 42.325])
+      .translate([width / 2, height / 2]);
+
+    var path = d3.geoPath()
+      .projection(projection);
+
+    var svg = d3.select("body")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    var blues = d3.schemeBlues[5];
+
+    var color = d3.scaleThreshold()
+      .domain([0.0, 0.1, 0.2, 0.3, 0.4])
+      .range(blues);
+
+    d3.queue()
+      .defer(d3.json, "data/boston_neigh.json")
+      .defer(d3.csv, "data/boston_311_totals.csv")
+      .await(ready);
+
+    function ready(error, boston, twitter) {
+      if (error) throw error;
+
+      var twitterById = {};
+      twitter.forEach(function(d) {
+        twitterById[d.id] = +d.twit_count / +d.tot_count * 100;
+      });
+
+      svg.append("g")
+          .attr("class", "boston_neigh")
+        .selectAll("path")
+          .data(topojson.feature(boston, boston.objects.boston_neigh).features)
+        .enter().append("path")
+          .attr("d", path)
+          .style("stroke", "#fff")
+          .style("fill", function(d) {
+		        return color(twitterById[d.properties.OBJECTID]);
+          })
+        //PART II: ADDING TOOLTIP
+        .on("mouseover", function(d){
+      		return tooltip
+          .style("top", (d3.event.pageY-10)+"px")
+          .style("left",(d3.event.pageX+10)+"px")
+          .text(d.properties.Name + ": " + twitterById[d.properties.OBJECTID].toFixed(2) + " %")
+          .style("visibility", "visible");
+      	})
+      	.on("mousemove", function(d){
+      		return tooltip
+          .style("top", (d3.event.pageY-10)+"px")
+          .style("left",(d3.event.pageX+10)+"px")
+          .text(d.properties.Name + ": " + twitterById[d.properties.OBJECTID].toFixed(2) + " %");
+      	})
+      	.on("mouseout", function(d){
+      		return tooltip.style("visibility", "hidden");
+      	});
+    }
+
+    //PART II: ADDING TOOLTIP STYLE
+    var tooltip = d3.select("body")
+      .append("div")
+      .style("position", "absolute")
+      .style("font-family", "'Open Sans', sans-serif")
+	    .style("font-size", "12px")
+      .style("padding", "5px")
+      .style("z-index", "10")
+      .style("visibility", "hidden")
+      .style("background-color", "#fff")
+      .style("padding", "5px")
+      .style("opacity", "0.7");
+
+    //PART III: ADDING LEGEND
+    //code ref: https://bl.ocks.org/mbostock/4060606
+
+    var g = svg.append("g")
+      .attr("class", "key")
+      .attr("transform", "translate(-350, 40)");
+
+    var x = d3.scaleLinear() //divide the legend length accordingly.
+      .domain([0.0, 0.5])
+      .rangeRound([450, 700]);
+
+    g.append("text")
+      .attr("class", "caption")
+      .attr("x", x.range()[0])
+      .attr("y", -6)
+      .text("% of 311 Requests from Twitter")
+      .attr("text-anchor", "start")
+      .attr("font-family", "'Open Sans', sans-serif")
+      .attr("font-size", "12px")
+      .attr("fill", "#000")
+      .attr("font-weight", "bold");
+
+    g.selectAll("rect")
+      .data(color.range().map(function(d) {
+          d = color.invertExtent(d);
+          if (d[0] == null) d[0] = x.domain()[0];
+          if (d[1] == null) d[1] = x.domain()[1];
+          return d;
+        }))
+      .enter().append("rect")
+        .attr("height", 8)
+        .attr("x", function(d) { return x(d[0]); })
+        .attr("width", function(d) { return x(d[1]) - x(d[0]); })
+        .attr("fill", function(d) { return color(d[0]); });
+
+    g.call(d3.axisBottom(x)
+        .tickSize(13)
+        .tickFormat(function(x, i) { return i ? x : x + "%"; })
+        .tickValues(color.domain()))
+      .select(".domain")
+        .remove();
+
+  </script>
+</body>
+</html>
