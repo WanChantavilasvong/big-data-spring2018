@@ -93,6 +93,7 @@
 				//This part adds the class "hover" to the state and its matching rectangle in the chart
 				.on("mouseover", function(d) {
 					d3.selectAll("." + stateById[d.id]).classed("hover",true);
+					console.log(stateById[d.id]);
 				})
 				.on("mouseout", function(d) {
 					d3.select(this).style("fill",function(d) { return color(marginById[d.id])});
@@ -148,6 +149,7 @@
 			.on("mouseover", function(d) {
 					//d3.select(this).classed("hover",true);
 					d3.selectAll("." + d.data.State).classed("hover",true);
+					console.log(d.data.State);
 				})
 			.on("mouseout", function(d) {
 				//d3.select(this).classed("hover",false);

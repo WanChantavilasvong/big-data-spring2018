@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>Mapping with D3</title>
+	<script src="http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+	<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+	<script src="http://d3js.org/topojson.v1.min.js"></script>
+	<script src="https://d3js.org/d3-queue.v2.min.js"></script>
+  <style>
+	  .neighborhoods {
+			fill: none;
+			stroke: #fff;
+	  }
+		.axis .domain {
+		  display: none;
+		}
+		.hover {
+			stroke-width: 2px;
+			opacity: 0.5;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div id="map"></div>
+	</div>
+	<div class="container">
+		<div id="chart"></div>
+	</div>
+
+	<script>
+
+    var width = 800, height = 350;
+
+    //------------------------------------------------------------------------
+    //MAP #MAP
+    //variables
+  	var albersProjection = d3.geoAlbers()
+      .scale( 100000 )
+      .rotate( [71.070640,0] )
+      .center( [0, 42.345735] )
+      .translate( [width/2,height/2] );
+
+    var path = d3.geoPath()
+        .projection(albersProjection);
+
+    var map = d3.select("#map").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+		var chart = d3.select("#chart").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+	  var xlegend = d3.scaleLinear() //for map legend
+		    .domain([0, 0.1, 0.2, 0.3, 0.4])
+		    .rangeRound([570, 620]);
+
+		var colorMap = d3.scaleThreshold() //for choropleth map
+				.domain([0, 0.1, 0.2, 0.3, 0.4])
+				.range(d3.schemeReds[5]);
+
+  	var g = map.append("g")
+  	    .attr("class", "key")
+  	    .attr("transform", "translate(0,40)");
+
+    //----------------------------------
+    //legend
+		g.selectAll("rect")
+		  .data(colorMap.range().map(function(d) {
+		      d = colorMap.invertExtent(d);
+		      if (d[0] == null) d[0] = xlegend.domain()[0];
+		      if (d[1] == null) d[1] = xlegend.domain()[1];
+		      return d;
+		    }))
+		  .enter().append("rect")
+		    .attr("height", 8)
+		    .attr("x", function(d) { return xlegend(d[0]); })
+		    .attr("width", function(d) { return xlegend(d[1]) - xlegend(d[0]); })
+		    .attr("fill", function(d) { return colorMap(d[0]); });
+
+		g.append("text")
+		    .attr("class", "caption")
+		    .attr("x", xlegend.range()[0])
+		    .attr("y", -6)
+		    .attr("fill", "#000")
+		    .attr("text-anchor", "start")
+		    .attr("font-weight", "bold")
+		    .text("% of 311 Requests from Twitter");
+
+		g.call(d3.axisBottom(xlegend)
+		    .tickSize(13)
+		    .tickFormat(function(xlegend, i) { return i ? xlegend : xlegend + "%"; })
+		    .tickValues(colorMap.domain()))
+		  .select(".domain")
+		    .remove();
+
+		d3.queue()
+			.defer(d3.json, "data/boston_neigh.json") // Load US Counties
+			.defer(d3.csv, "data/boston_311_totals.csv") // Load Unemployment csV
+			.await(ready); // Run 'ready' when JSONs are loaded
+
+		//------------------------------------------------------------------------
+		//FUNCTION FOR BOTH GRAPHICS
+		function ready(error, neigh, twitter) {
+			if (error) throw error;
+
+	  var twitterPercById = {}; // Create empty object for holding dataset
+    var nameById = {};
+
+    twitter.forEach(function(d) {
+      twitterPercById[d.id] = +((d.Twitter / d.Total) * 100);
+      nameById[d.id] = d.Name.replace(/\s/g, '');
+    });
+
+    map.append("g")
+        .attr("class", "neighborhoods")
+      .selectAll("path")
+        .data(topojson.feature(neigh, neigh.objects.boston_neigh).features)
+        .enter().append("path")
+        .attr("d", path)
+				.style("fill", function(d) { return colorMap(twitterPercById[d.properties.OBJECTID])})
+        .style("stroke", "white")
+				.attr("class", function (d) { return nameById[d.properties.OBJECTID];})
+				.on("mouseover", function(d){
+					// d3.select(this).classed("hover",true);
+					d3.selectAll("." + nameById[d.properties.OBJECTID]).classed("hover",true);
+				})
+				.on("mouseout", function(d){
+					// d3.select(this).classed("hover",false);
+					d3.selectAll("." + nameById[d.properties.OBJECTID]).classed("hover", false);
+				});
+    //------------------------------------------------------------------------
+    //BARCHART #CHART
+    //variables
+		var m = {top: 20, right: 20, bottom: 120, left: 40},
+			width = +map.attr("width") - m.left - m.right,
+			height = +map.attr("height") - m.top - m.bottom,
+			g = chart.append("g").attr("transform", "translate(" + m.left + "," + m.top + ")");
+
+		var x = d3.scaleBand()
+			.rangeRound([0, width])
+			.paddingInner(0.05)
+			.align(0.1);
+
+		var y = d3.scaleLinear()
+			.rangeRound([height, 0]);
+
+		var z = d3.scaleOrdinal()
+			.range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c"]);
+
+	  var keys = ["Citizens Connect App", "City Worker App", "Constituent Call", "Employee Generated", "Twitter", "Self Service"];
+
+	  twitter.sort(function(a, b) { return b.Total - a.Total; });
+	  x.domain(twitter.map(function(d) { return d.Name; }));
+	  y.domain([0, d3.max(twitter, function(d) { return +d.Total; })]).nice();
+	  z.domain(keys);
+
+	  g.append("g")
+			.selectAll("g")
+			.data(d3.stack().keys(keys)(twitter))
+			.enter().append("g")
+			  .attr("fill", function(d) { return z(d.key); })
+				.selectAll("rect")
+			.data(function(d) { return d; })
+			.enter().append("rect")
+			  .attr("x", function(d) { return x(d.data.Name); })
+			  .attr("y", function(d) { return y(d[1]); })
+			  .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+			  .attr("width", x.bandwidth())
+			  //The next line assigns each rectangle a class that matches the state names above: AK, AR, etc.
+			  .attr("class", function (d) { return d.data.Name.replace(/\s/g, '');})
+			  //The mouseover functions work just like the ones in the map, they add "hover" class to all matching elements
+			.on("mouseover", function(d) {
+					d3.selectAll("." + d.data.Name.replace(/\s/g, '')).classed("hover", true);
+					})
+			.on("mouseout", function(d) {
+					d3.selectAll("." + d.data.Name.replace(/\s/g, '')).classed("hover", false);
+					});
+
+	  g.append("g")
+		  .attr("class", "axis")
+		  .attr("transform", "translate(0," + height + ")")
+		  .call(d3.axisBottom(x))
+			.selectAll("text")
+			.style("text-anchor", "end")
+			.attr("dx", "-.8em")
+			.attr("dy", ".15em")
+			.attr("transform", "rotate(-65)");
+
+	  g.append("g")
+		  .attr("class", "axis")
+		  .call(d3.axisLeft(y).ticks(null, "s"))
+		.append("text")
+		  .attr("x", 2)
+		  .attr("y", y(y.ticks().pop()) + 0.5)
+		  .attr("dy", "0.32em")
+		  .attr("fill", "#000")
+		  .attr("font-weight", "bold")
+		  .attr("text-anchor", "start");
+
+	  var legend = g.append("g")
+		  .attr("font-family", "sans-serif")
+		  .attr("font-size", 10)
+		  .attr("text-anchor", "end")
+		.selectAll("g")
+		.data(keys.slice().reverse())
+		.enter().append("g")
+		  .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+	  legend.append("rect")
+		  .attr("x", width - 19)
+		  .attr("width", 19)
+		  .attr("height", 19)
+		  .attr("fill", z);
+
+	  legend.append("text")
+		  .attr("x", width - 24)
+		  .attr("y", 9.5)
+		  .attr("dy", "0.32em")
+		  .text(function(d) { return d; });
+  };
+	</script>
+</body>
+</html>
